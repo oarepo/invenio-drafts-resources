@@ -300,7 +300,7 @@ class RecordService(RecordServiceBase):
         )
 
     @unit_of_work()
-    def create(self, identity, data, uow=None, expand=False):
+    def create(self, identity, data, uow=None, expand=False, **kwargs):
         """Create a draft for a new record.
 
         It does NOT eagerly create the associated record.
@@ -312,6 +312,7 @@ class RecordService(RecordServiceBase):
             raise_errors=False,
             uow=uow,
             expand=expand,
+            **kwargs
         )
         uow.register(ParentRecordCommitOp(res._record.parent))
         return res
