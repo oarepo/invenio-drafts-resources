@@ -109,7 +109,7 @@ class RecordService(RecordServiceBase):
         **kwargs,
     ):
         """Search for drafts records matching the querystring."""
-        self.require_permission(identity, "search_drafts")
+        self.require_permission(identity, "search_drafts", params=params, extra_filter=extra_filter, **kwargs)
         # Prepare and execute the search
         params = params or {}
 
@@ -162,7 +162,7 @@ class RecordService(RecordServiceBase):
         except NoResultFound:
             record = self.draft_cls.pid.resolve(id_, registered_only=False)
 
-        self.require_permission(identity, "read", record=record)
+        self.require_permission(identity, "read", record=record, params=params, **kwargs)
         extra_filter = dsl.Q("term", **{"parent.id": str(record.parent.pid.pid_value)})
         if filter_ := kwargs.pop("extra_filter", None):
             extra_filter = filter_ & extra_filter
@@ -195,7 +195,7 @@ class RecordService(RecordServiceBase):
             expand=expand,
         )
 
-    def read_draft(self, identity, id_, expand=False):
+    def read_draft(self, identity, id_, expand=False, **kwargs):
         """Retrieve a draft."""
         # Resolve and require permission
         try:
@@ -207,7 +207,7 @@ class RecordService(RecordServiceBase):
             # object exists).
             raise PIDDoesNotExistError(self.draft_cls.pid.field._pid_type, id_)
 
-        self.require_permission(identity, "read_draft", record=draft)
+        self.require_permission(identity, "read_draft", record=draft, **kwargs)
 
         # Run components
         for component in self.components:
@@ -223,7 +223,7 @@ class RecordService(RecordServiceBase):
             expand=expand,
         )
 
-    def read_latest(self, identity, id_, expand=False):
+    def read_latest(self, identity, id_, expand=False, **kwargs):
         """Retrieve latest record.
 
         If provided with the ID of a parent record it will resolve it and return the latest version of the record.
@@ -245,7 +245,7 @@ class RecordService(RecordServiceBase):
             else:
                 raise NoResultFound("Failed to fetch the record versions.")
 
-        self.require_permission(identity, "read", record=record)
+        self.require_permission(identity, "read", record=record, **kwargs)
 
         return self.result_item(
             self,
@@ -258,7 +258,7 @@ class RecordService(RecordServiceBase):
 
     @unit_of_work()
     def update_draft(
-        self, identity, id_, data, revision_id=None, uow=None, expand=False
+        self, identity, id_, data, revision_id=None, uow=None, expand=False, **kwargs
     ):
         """Replace a draft."""
         draft = self.draft_cls.pid.resolve(id_, registered_only=False)
@@ -266,7 +266,7 @@ class RecordService(RecordServiceBase):
         self.check_revision_id(draft, revision_id)
 
         # Permissions
-        self.require_permission(identity, "update_draft", record=draft)
+        self.require_permission(identity, "update_draft", record=draft, data=data, **kwargs)
 
         # Load data with service schema
         data, errors = self.schema.load(
@@ -318,7 +318,7 @@ class RecordService(RecordServiceBase):
         return res
 
     @unit_of_work()
-    def edit(self, identity, id_, uow=None, expand=False):
+    def edit(self, identity, id_, uow=None, expand=False, **kwargs):
         """Create a new revision or a draft for an existing record.
 
         :param id_: record PID value.
@@ -326,7 +326,7 @@ class RecordService(RecordServiceBase):
         # Draft exists - return it
         try:
             draft = self.draft_cls.pid.resolve(id_, registered_only=False)
-            self.require_permission(identity, "edit", record=draft)
+            self.require_permission(identity, "edit", record=draft, **kwargs)
             return self.result_item(
                 self, identity, draft, links_tpl=self.links_item_tpl
             )
@@ -341,7 +341,7 @@ class RecordService(RecordServiceBase):
         # Draft does not exist - so get the main record we want to edit and
         # create a draft from it
         record = self.record_cls.pid.resolve(id_)
-        self.require_permission(identity, "edit", record=record)
+        self.require_permission(identity, "edit", record=record, **kwargs)
         draft = self.draft_cls.edit(record)
 
         # Run components
@@ -363,7 +363,7 @@ class RecordService(RecordServiceBase):
         )
 
     @unit_of_work()
-    def publish(self, identity, id_, uow=None, expand=False):
+    def publish(self, identity, id_, uow=None, expand=False, **kwargs):
         """Publish a draft.
 
         Idea:
@@ -375,7 +375,7 @@ class RecordService(RecordServiceBase):
         """
         # Get the draft
         draft = self.draft_cls.pid.resolve(id_, registered_only=False)
-        self.require_permission(identity, "publish", record=draft)
+        self.require_permission(identity, "publish", record=draft, **kwargs)
 
         # Validate the draft strictly - since a draft can be saved with errors
         # we do a strict validation here to make sure only valid drafts can be
@@ -406,14 +406,14 @@ class RecordService(RecordServiceBase):
         )
 
     @unit_of_work()
-    def new_version(self, identity, id_, uow=None, expand=False):
+    def new_version(self, identity, id_, uow=None, expand=False, **kwargs):
         """Create a new version of a record."""
         # Get the record - i.e. you can only create a new version in case
         # at least one published record already exists.
         record = self.record_cls.pid.resolve(id_)
 
         # Check permissions
-        self.require_permission(identity, "new_version", record=record)
+        self.require_permission(identity, "new_version", record=record, **kwargs)
 
         # Draft for new version already exists? if so return it
         if record.versions.next_draft_id:
@@ -449,7 +449,7 @@ class RecordService(RecordServiceBase):
         )
 
     @unit_of_work()
-    def delete_draft(self, identity, id_, revision_id=None, uow=None):
+    def delete_draft(self, identity, id_, revision_id=None, uow=None, **kwargs):
         """Delete a record from database and search indexes."""
         draft = self.draft_cls.pid.resolve(id_, registered_only=False)
         latest_id = draft.versions.latest_id
@@ -457,7 +457,7 @@ class RecordService(RecordServiceBase):
         self.check_revision_id(draft, revision_id)
 
         # Permissions
-        self.require_permission(identity, "delete_draft", record=draft)
+        self.require_permission(identity, "delete_draft", record=draft, **kwargs)
 
         # Get published record if exists
         try:
@@ -501,18 +501,18 @@ class RecordService(RecordServiceBase):
         return True
 
     @unit_of_work()
-    def import_files(self, identity, id_, uow=None):
+    def import_files(self, identity, id_, uow=None, **kwargs):
         """Import files from previous record version."""
         if self.draft_files is None:
             raise RuntimeError("Files support is not enabled.")
 
         # Read draft
         draft = self.draft_cls.pid.resolve(id_, registered_only=False)
-        self.require_permission(identity, "draft_create_files", record=draft)
+        self.require_permission(identity, "draft_create_files", record=draft, **kwargs)
 
         # Retrieve latest record
         record = self.record_cls.get_record(draft.versions.latest_id)
-        self.require_permission(identity, "read_files", record=record)
+        self.require_permission(identity, "read_files", record=record, **kwargs)
 
         # Run components
         self.run_components(
@@ -654,7 +654,7 @@ class RecordService(RecordServiceBase):
 
     @unit_of_work()
     def reindex_latest_first(
-        self, identity, search_preference=None, extra_filter=None, uow=None
+        self, identity, search_preference=None, extra_filter=None, uow=None, **kwargs
     ):
         """Reindexes records matching the query filter, prioritizing latest versions.
 
@@ -665,7 +665,7 @@ class RecordService(RecordServiceBase):
 
             this service call should only be used during asynchronous calls (e.g. not inside a HTTP request context), since ``search.sync()`` might take some time.
         """
-        self.require_permission(identity, "manage")
+        self.require_permission(identity, "manage", extra_filter=extra_filter, **kwargs)
 
         # Create a search instance with the given filters. We avoid the overhead of executing params interpreters (e.g. aggregations)
         search = self.create_search(
