@@ -230,6 +230,13 @@ class BaseRecordFilesComponent(ServiceComponent, _BaseRecordFilesComponent):
 
     def _check_file_completed(self, file_record):
         """Check if file upload has completed."""
+        # Check if RDMDraftFile file has OV assigned
+        # - if not, the upload is ongoing or has failed (fail handled elsewhere)
+        # prevents ambiguous errors when trying to publish a record with
+        # ongoing upload (cannot get storage class of None if OV is not set)
+        has_attached_object = file_record.file is not None
+        if not has_attached_object:
+            return False
         transfer = current_transfer_registry.get_transfer(
             record=file_record.record,
             file_record=file_record,
