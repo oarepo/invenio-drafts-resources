@@ -112,7 +112,13 @@ class RecordService(RecordServiceBase):
         **kwargs,
     ):
         """Search for drafts records matching the querystring."""
-        self.require_permission(identity, "search_drafts", params=params, extra_filter=extra_filter, **kwargs)
+        self.require_permission(
+            identity,
+            "search_drafts",
+            params=params,
+            extra_filter=extra_filter,
+            **kwargs,
+        )
         # Prepare and execute the search
         params = params or {}
 
@@ -165,7 +171,9 @@ class RecordService(RecordServiceBase):
         except NoResultFound:
             record = self.draft_cls.pid.resolve(id_, registered_only=False)
 
-        self.require_permission(identity, "read", record=record, params=params, **kwargs)
+        self.require_permission(
+            identity, "read", record=record, params=params, **kwargs
+        )
         extra_filter = dsl.Q("term", **{"parent.id": str(record.parent.pid.pid_value)})
         if filter_ := kwargs.pop("extra_filter", None):
             extra_filter = filter_ & extra_filter
@@ -269,7 +277,9 @@ class RecordService(RecordServiceBase):
         self.check_revision_id(draft, revision_id)
 
         # Permissions
-        self.require_permission(identity, "update_draft", record=draft, data=data, **kwargs)
+        self.require_permission(
+            identity, "update_draft", record=draft, data=data, **kwargs
+        )
 
         # Load data with service schema
         data, errors = self.schema.load(
@@ -315,7 +325,7 @@ class RecordService(RecordServiceBase):
             raise_errors=False,
             uow=uow,
             expand=expand,
-            **kwargs
+            **kwargs,
         )
         uow.register(ParentRecordCommitOp(res._record.parent))
         return res
