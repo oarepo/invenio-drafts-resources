@@ -10,6 +10,10 @@
 Changes
 =======
 
+Version 6.1.1 (release 2025-05-06)
+
+- installation: fix installation directive (audit-logs)
+
 Version 6.1.0 (release 2025-05-06)
 
 - i18n: mark strings for translation
