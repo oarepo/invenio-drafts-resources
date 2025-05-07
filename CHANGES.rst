@@ -10,6 +10,13 @@
 Changes
 =======
 
+Version 6.1.0 (release 2025-05-06)
+
+- i18n: mark strings for translation
+- versions: dump UUIDs as string
+- global: add audit logs to basic record and draft actions
+          (experimental, behind a feature flag)
+
 Version 6.0.0 (release 2024-12-10)
 
 - setup: change to reusable workflows
