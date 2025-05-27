@@ -23,6 +23,7 @@ from invenio_files_rest.errors import BucketLockedError, InvalidOperationError
 from invenio_files_rest.models import Bucket, FileInstance, ObjectVersion
 from invenio_records_resources.services.files.transfer.constants import (
     FETCH_TRANSFER_TYPE,
+    REMOTE_TRANSFER_TYPE,
 )
 from marshmallow.exceptions import ValidationError
 from mock_module.models import DraftMetadata, FileDraftMetadata, FileRecordMetadata
@@ -600,3 +601,70 @@ def test_manage_files_permissions(
     assert draft.errors[0]["messages"] == [
         "You don't have permissions to manage files options.",
     ]
+
+
+def test_publish_with_remote_files(
+    app, service, draft_file_service, file_service, input_data, identity_simple
+):
+    """Tests wether it is possible to submit a record if the file isn't fully downloaded."""
+    draft = service.create(identity_simple, input_data)  # 1
+    file_to_initialise = [
+        {
+            "key": "article.txt",
+            "transfer": {
+                "type": REMOTE_TRANSFER_TYPE,
+                "url": "https://inveniordm.test/files/article.txt",
+            },
+        }
+    ]
+
+    files = draft_file_service.init_files(
+        identity_simple, draft.id, data=file_to_initialise
+    )
+
+    for file_record in files.entries:
+        assert file_record["transfer"]["type"] == REMOTE_TRANSFER_TYPE
+
+
+    published_record = service.publish(identity_simple, draft.id).to_dict()
+    files = file_service.list_files(
+        identity_simple, published_record["id"]
+    ).to_dict()["entries"]
+    assert len(files) == 1
+    assert files[0]["transfer"]["type"] == REMOTE_TRANSFER_TYPE
+    assert files[0]["status"] == "completed"
+
+    # New version
+    draft = service.new_version(identity_simple, draft.id)
+    service.import_files(identity_simple, draft.id)
+
+    file_to_initialise = [
+        {
+            "key": "article1.txt",
+            "transfer": {
+                "type": REMOTE_TRANSFER_TYPE,
+                "url": "https://inveniordm.test/files/article.txt",
+            },
+        }
+    ]
+
+    files = draft_file_service.init_files(
+        identity_simple, draft.id, data=file_to_initialise
+    )
+
+    # Publish
+    new_version_published = service.publish(identity_simple, draft.id)
+
+    # Check that the file has been correctly imported
+    files = file_service.list_files(
+        identity_simple, new_version_published["id"]
+    ).to_dict()["entries"]
+    files.sort(key=lambda x: x["key"])
+    assert len(files) == 2
+    assert files[0]["key"] == "article.txt"
+    assert files[0]["transfer"]["type"] == REMOTE_TRANSFER_TYPE
+    assert files[0]["status"] == "completed"
+
+    assert files[1]["key"] == "article1.txt"
+    assert files[1]["transfer"]["type"] == REMOTE_TRANSFER_TYPE
+    assert files[1]["status"] == "completed"
