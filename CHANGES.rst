@@ -1,7 +1,7 @@
 ..
     Copyright (C) 2020-2025 CERN.
     Copyright (C) 2020 Northwestern University.
-    Copyright (C) 2024 Graz University of Technology.
+    Copyright (C) 2024-2025 Graz University of Technology.
 
     Invenio-Drafts-Resources is free software; you can redistribute it and/or
     modify it under the terms of the MIT License; see LICENSE file for more
@@ -9,6 +9,18 @@
 
 Changes
 =======
+
+Version 7.0.0 (release 2025-06-03)
+
+- setup: bump major dependencies
+- tests: Added tests for remote transfer type
+  * Whole lifecycle - create draft, add remote file, publish, create new
+  version, import files from the previous, add a new remote file, publish,
+  check files are ok
+- fix: remove obsolete code in favour of transfer checks
+- feat: file transfer registry update
+  * Implementation of RFC 0072 - Pluggable Transfer Types for Record Files
+
 
 Version 6.2.0 (release 2025-05-23)
 
