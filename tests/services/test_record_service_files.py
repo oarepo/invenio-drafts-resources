@@ -625,11 +625,10 @@ def test_publish_with_remote_files(
     for file_record in files.entries:
         assert file_record["transfer"]["type"] == REMOTE_TRANSFER_TYPE
 
-
     published_record = service.publish(identity_simple, draft.id).to_dict()
-    files = file_service.list_files(
-        identity_simple, published_record["id"]
-    ).to_dict()["entries"]
+    files = file_service.list_files(identity_simple, published_record["id"]).to_dict()[
+        "entries"
+    ]
     assert len(files) == 1
     assert files[0]["transfer"]["type"] == REMOTE_TRANSFER_TYPE
     assert files[0]["status"] == "completed"
