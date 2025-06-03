@@ -45,7 +45,7 @@ def app_config(app_config):
 
     app_config["THEME_FRONTPAGE"] = False
     app_config["RECORDS_RESOURCES_FILES_ALLOWED_REMOTE_DOMAINS"] = "inveniordm.test"
-    
+
     return app_config
 
 
