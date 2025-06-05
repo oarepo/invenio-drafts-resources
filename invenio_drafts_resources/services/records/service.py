@@ -221,15 +221,22 @@ class RecordService(RecordServiceBase):
 
         self.require_permission(identity, "read_draft", record=draft)
 
+        # NOTE: We can't re-run the schema vadliation here, because the draft since the
+        # draft data that we have stored, is not necessarily valid input data for the
+        # service schema. We should make this possible in the future, but for now we
+        # just allow components to add their own errors to the draft result.
+        errors = []
+
         # Run components
         for component in self.components:
             if hasattr(component, "read_draft"):
-                component.read_draft(identity, draft=draft)
+                component.read_draft(identity, draft=draft, errors=errors)
 
         return self.result_item(
             self,
             identity,
             draft,
+            errors=errors,
             links_tpl=self.links_item_tpl,
             expandable_fields=self.expandable_fields,
             expand=expand,
