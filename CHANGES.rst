@@ -10,6 +10,10 @@
 Changes
 =======
 
+Version v7.1.0 (released 2025-06-11)
+
+- services: added `errors` in read_draft components
+
 Version 7.0.0 (release 2025-06-03)
 
 - setup: bump major dependencies
