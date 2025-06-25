@@ -10,6 +10,11 @@
 Changes
 =======
 
+Version v7.1.1 (released 2025-06-25)
+
+- auditlog: fix context injection
+- fix: translation only applied on app start
+
 Version v7.1.0 (released 2025-06-11)
 
 - services: added `errors` in read_draft components
