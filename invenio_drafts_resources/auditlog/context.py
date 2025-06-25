@@ -50,14 +50,13 @@ class RequestContext(object):
         # IMPORTANT! DON'T COPY THIS, PLEASE DON'T DO THIS EVER...
         if request:
             if current_app.config["AUDIT_LOGS_METADATA_FIELDS"]["ip_address"]:
-                dict_set(
-                    data,
-                    "metadata.ip_address",
-                    request.headers.get("REMOTE_ADDR") or request.remote_addr,
-                )
+                ip = request.headers.get("REMOTE_ADDR") or request.remote_addr
+                if ip:
+                    dict_set(data, "metadata.ip_address", ip)
+
             if current_app.config["AUDIT_LOGS_METADATA_FIELDS"]["session"]:
-                dict_set(
-                    data,
-                    "metadata.session",
-                    request.cookies.get("SESSION") or request.cookies.get("session"),
+                session = request.cookies.get("SESSION") or request.cookies.get(
+                    "session"
                 )
+                if session:
+                    dict_set(data, "metadata.session", session)
